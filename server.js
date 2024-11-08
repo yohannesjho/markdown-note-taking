@@ -3,11 +3,14 @@ const multer = require('multer')
 const marked = require('marked')
 const mongoose = require('mongoose')
 const dotenv = require('dotenv')
+const noteRoutes = require('./routes/noteRoutes')
+
+dotenv.config()
 
 const app = express()
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }));
-dotenv.config()
+app.use('/api',noteRoutes)
 const PORT = 5000;
 
 mongoose.connect(process.env.MONGO_URI).then((req,res)=>console.log('connected to db')).catch((e)=>console.log(e))

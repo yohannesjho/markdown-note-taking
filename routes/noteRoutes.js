@@ -4,6 +4,7 @@ const Note = require('../models/Note')
 const { marked } = require('marked')
 const multer = require('multer')
 const upload = require('../config/fileConfig')
+const axios = require('axios')
 
 //create a new note
 router.post('/note', async (req, res) => {
@@ -47,11 +48,36 @@ router.get('/note/:id', async (req, res) => {
 //file uploades 
 router.post('/upload', upload.single('file'), (req, res) => {
     try {
-        console.log(req.file); // Logs the file info to the console
+        console.log(req.file);  
         res.send('File uploaded successfully!');
     } catch (err) {
         res.status(400).send('Error uploading file');
     }
 });
+
+//check the grammar
+router.post('/grammar-check', async (req, res) => {
+    const { text } = req.body;
+  
+    if (!text) {
+      return res.status(400).json({ message: 'Text is required' });
+    }
+  
+    try {
+      // LanguageTool API request
+      const response = await axios.post('https://api.languagetool.org/v2/check', {
+        text: text,
+        language: 'auto'   
+      }, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      });
+  
+      
+      res.status(200).json(response.data);
+    } catch (error) {
+      console.error('Grammar check error:', error);
+      res.status(500).json({ message: 'Error checking grammar', error: error.message });
+    }
+})
 
 module.exports = router;

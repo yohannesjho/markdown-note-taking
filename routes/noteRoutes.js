@@ -2,6 +2,7 @@ const express = require('express')
 const router = express.Router()
 const Note = require('../models/Note')
 const marked = require('marked')
+const multer = require('multer')
 
 //create a new note
 router.post('/note', async (req,res)=>{
@@ -40,5 +41,11 @@ router.get('/note/:id', async (req,res)=>{
         res.status(500).json({message:error.message})
     }
 })
+
+//file uploades 
+router.post('/uploads',upload.single('file'), (req,res)=>{
+    if(!req.file){res.status(404).json({message:"no file is uploaded"})}
+    res.status(200).json({filePath:req.file.path})
+} )
 
 module.exports = router;

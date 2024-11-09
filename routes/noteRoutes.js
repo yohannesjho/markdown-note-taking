@@ -45,6 +45,35 @@ router.get('/note/:id', async (req, res) => {
     }
 })
 
+//update a specific note
+router.put('/note/:id',async (req,res)=>{
+    const {title, content} = req.body
+    try {
+        const updatedNote = await Note.findByIdAndUpdate(req.params.id,{
+            title,
+            content,
+            updatedAt:Date.now()
+        })
+        res.status(200).json(updatedNote)
+    } catch (error) {
+        res.status(500).json({message:error.message})
+    }
+})
+
+//Delete a specific note
+router.delete('/note/:id', async (req,res)=>{
+    try {
+        
+        const note = await Note.findByIdAndDelete(req.params.id)
+        if(!note){
+            return res.status(404).json({message:"note not found"})
+        }
+        res.status(200).json({message:"note deleted successfully"})
+    } catch (error) {
+        res.status(500).json({messsage:error.message})
+    }
+})
+
 //file uploades 
 router.post('/upload', upload.single('file'), (req, res) => {
     try {
@@ -72,8 +101,10 @@ router.post('/grammar-check', async (req, res) => {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
       });
   
-      
-      res.status(200).json(response.data);
+      if(response.data.matches.length === 0){
+        res.status(400).json({message:"there is no grammar error"})
+      }
+      res.status(200).json(response.data.matches[0].message);
     } catch (error) {
       console.error('Grammar check error:', error);
       res.status(500).json({ message: 'Error checking grammar', error: error.message });

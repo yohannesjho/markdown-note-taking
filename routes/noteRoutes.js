@@ -74,8 +74,6 @@ router.delete('/note/:id', async (req,res)=>{
     }
 })
 
-
-
 //file uploades 
 router.post('/note/:id/upload', upload.single('file'), async (req, res) => {
     try {
@@ -83,8 +81,7 @@ router.post('/note/:id/upload', upload.single('file'), async (req, res) => {
         if(!note){return res.status(404).json({message:"note not found"})}
         if(!req.file){return res.status(404).json({message:"no file uploaded"})}
         note.files.push(req.file.path) 
-        await note.save()
-       ;
+        await note.save();
     } catch (err) {
         res.status(500).json({message:err.message});
     }

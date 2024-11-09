@@ -74,13 +74,19 @@ router.delete('/note/:id', async (req,res)=>{
     }
 })
 
+
+
 //file uploades 
-router.post('/upload', upload.single('file'), (req, res) => {
+router.post('/note/:id/upload', upload.single('file'), async (req, res) => {
     try {
-        console.log(req.file);  
-        res.send('File uploaded successfully!');
+        const note = Note.findById(req.params.id)
+        if(!note){return res.status(404).json({message:"note not found"})}
+        if(!req.file){return res.status(404).json({message:"no file uploaded"})}
+        note.files.push(req.file.path) 
+        await note.save()
+       ;
     } catch (err) {
-        res.status(400).send('Error uploading file');
+        res.status(500).json({message:err.message});
     }
 });
 

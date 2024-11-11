@@ -6,6 +6,7 @@ const multer = require('multer')
 const upload = require('../config/fileConfig')
 const axios = require('axios')
 
+
 //create a new note
 router.post('/note', async (req, res) => {
     const { title, content } = req.body

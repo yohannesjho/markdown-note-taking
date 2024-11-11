@@ -14,7 +14,8 @@ router.post('/note', async (req, res) => {
 
         const note = new Note({
             title,
-            content
+            content,
+            user:req.user.userId
         })
         const savedNote = await note.save()
         res.status(201).json(savedNote)
@@ -32,6 +33,16 @@ router.get('/note/render/:id', async (req, res) => {
         res.status(200).json({ html })
     } catch (error) {
         res.status(500).json({ message: error.message })
+    }
+})
+
+//get a note
+router.get('/note', async (req,res)=>{
+    try {
+        const notes = await Note.find({user:req.user.userId})
+        res.status(200).json(notes)
+    } catch (error) {
+        res.status(500).json({message:error.message})
     }
 })
 

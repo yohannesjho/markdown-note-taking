@@ -5,51 +5,53 @@ const { marked } = require('marked')
 const multer = require('multer')
 const upload = require('../config/fileConfig')
 const axios = require('axios')
-const {client} = require('../db/db')
+const { getDb } = require('../db/db')
+const { ReturnDocument } = require('mongodb')
 
 
 //create a new note
 router.post('/note', async (req, res) => {
-    const { title, content } = req.body
+    const { title, content } = req.body;
     try {
-        const doc = {
-            title,
-            content
-        }
-        const result = await Note.insertOne(doc)
-        res.status(201).json({message:"doc is inserted"})
+        const db = getDb();
+        const result = await db.collection('notes').insertOne({ title, content, createdAt: Date.now() });
+        res.status(201).json({ message: "Document inserted", noteId: result.insertedId });
     } catch (error) {
-        res.status(500).json({ message: error.message })
+        res.status(500).json({ message: error.message });
     }
-})
+});
 
 //get rendered markdown from html
 router.get('/note/render/:id', async (req, res) => {
     try {
-        const note = await Note.findById(req.params.id)
-        if (!note) { res.status(404).json({ message: "note not found" }) }
-        const html = marked(note.content)
-        res.status(200).json({ html })
+        const db = getDb();
+        const note = await db.collection("notes").findOne({ _id: req.params.id })
+        if (!note) return res.status(404).json({ message: "Note not found" });
+        const html = marked(note.content);
+        res.status(200).json({ html });
     } catch (error) {
         res.status(500).json({ message: error.message })
     }
 })
 
-//get a note
-router.get('/note', async (req,res)=>{
+//get all notes
+router.get('/notes', async (req, res) => {
     try {
-        const notes = await Note.find({user:req.user.userId})
+        const db = getDb()
+        const notes = await db.collection('notes').find().toArray()
         res.status(200).json(notes)
+
     } catch (error) {
-        res.status(500).json({message:error.message})
+        res.status(500).json({ message: error.message })
     }
 })
 
 //get note by id
 router.get('/note/:id', async (req, res) => {
     try {
-        const note = await Note.findById(req.params.id)
-        if (!note) { res.status(404).json({ message: "note not found" }) }
+        const db = getDb()
+        const note = await db.collection('notes').findOne({ _id: new require("mongodb").ObjectId(req.params.id) })
+        if (!note) return res.status(404).json({ message: "note not found" })
         res.status(200).json(note)
     } catch (error) {
         res.status(500).json({ message: error.message })
@@ -57,31 +59,36 @@ router.get('/note/:id', async (req, res) => {
 })
 
 //update a specific note
-router.put('/note/:id',async (req,res)=>{
-    const {title, content} = req.body
+router.put('/note/:id', async (req, res) => {
+    const { title, content } = req.body
     try {
-        const updatedNote = await Note.findByIdAndUpdate(req.params.id,{
-            title,
-            content,
-            updatedAt:Date.now()
-        })
-        res.status(200).json(updatedNote)
+        const db = getDb()
+        await db.collection("notes").updateOne(
+            { _id: new require("mongodb").ObjectId(req.params.id) }, 
+            {
+            $set: {
+                title,
+                content,
+                updatedAt: new Date.now()
+            }},
+            { returnDocument: 'after' })
+res.status(200).json(updatedNote)
     } catch (error) {
-        res.status(500).json({message:error.message})
-    }
+    res.status(500).json({ message: error.message })
+}
 })
 
 //Delete a specific note
-router.delete('/note/:id', async (req,res)=>{
+router.delete('/note/:id', async (req, res) => {
     try {
-        
+
         const note = await Note.findByIdAndDelete(req.params.id)
-        if(!note){
-            return res.status(404).json({message:"note not found"})
+        if (!note) {
+            return res.status(404).json({ message: "note not found" })
         }
-        res.status(200).json({message:"note deleted successfully"})
+        res.status(200).json({ message: "note deleted successfully" })
     } catch (error) {
-        res.status(500).json({messsage:error.message})
+        res.status(500).json({ messsage: error.message })
     }
 })
 
@@ -89,39 +96,39 @@ router.delete('/note/:id', async (req,res)=>{
 router.post('/note/:id/upload', upload.single('file'), async (req, res) => {
     try {
         const note = Note.findById(req.params.id)
-        if(!note){return res.status(404).json({message:"note not found"})}
-        if(!req.file){return res.status(404).json({message:"no file uploaded"})}
-        note.files.push(req.file.path) 
+        if (!note) { return res.status(404).json({ message: "note not found" }) }
+        if (!req.file) { return res.status(404).json({ message: "no file uploaded" }) }
+        note.files.push(req.file.path)
         await note.save();
     } catch (err) {
-        res.status(500).json({message:err.message});
+        res.status(500).json({ message: err.message });
     }
 });
 
 //check the grammar
 router.post('/grammar-check', async (req, res) => {
     const { text } = req.body;
-  
+
     if (!text) {
-      return res.status(400).json({ message: 'Text is required' });
+        return res.status(400).json({ message: 'Text is required' });
     }
-  
+
     try {
-      // LanguageTool API request
-      const response = await axios.post('https://api.languagetool.org/v2/check', {
-        text: text,
-        language: 'auto'   
-      }, {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-      });
-  
-      if(response.data.matches.length === 0){
-        res.status(400).json({message:"there is no grammar error"})
-      }
-      res.status(200).json(response.data.matches[0].message);
+        // LanguageTool API request
+        const response = await axios.post('https://api.languagetool.org/v2/check', {
+            text: text,
+            language: 'auto'
+        }, {
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        });
+
+        if (response.data.matches.length === 0) {
+            res.status(400).json({ message: "there is no grammar error" })
+        }
+        res.status(200).json(response.data.matches[0].message);
     } catch (error) {
-      console.error('Grammar check error:', error);
-      res.status(500).json({ message: 'Error checking grammar', error: error.message });
+        console.error('Grammar check error:', error);
+        res.status(500).json({ message: 'Error checking grammar', error: error.message });
     }
 })
 

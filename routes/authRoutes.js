@@ -2,16 +2,26 @@ const express = require('express')
 const router = express.Router()
 const User = require('../models/user')
 const jwt = require('jsonwebtoken')
+const {client} = require('../db/db')
 
 
 //register a new user
 router.post('/user/register',async (req,res)=>{
     const {userName, password} = req.body
-    const user = new User({userName,password,createdAt:Date.now()})
-    await user.save()
-    const payload = {userId:user._id}
-    const token = jwt.sign(payload,process.env.JWT_SECRET,{expiresIn:'1h'})
-    res.status(201).json({token})
+    console.log(userName)
+    const doc = {
+        userName,
+        password,
+        createdAt:Date.now()
+    }
+    const database = client.db('admin')
+    const user = await User.insertOne(doc);
+    // const user = new User({userName,password,createdAt:Date.now()})
+    // await user.save()
+    console.log('user created')
+    // const payload = {userId:user._id}
+    // const token = jwt.sign(payload,process.env.JWT_SECRET,{expiresIn:'1h'})
+    // res.status(201).json({token})
     
 })
 //login the user

@@ -5,20 +5,19 @@ const { marked } = require('marked')
 const multer = require('multer')
 const upload = require('../config/fileConfig')
 const axios = require('axios')
+const {client} = require('../db/db')
 
 
 //create a new note
 router.post('/note', async (req, res) => {
     const { title, content } = req.body
     try {
-
-        const note = new Note({
+        const doc = {
             title,
-            content,
-            user:req.user.userId
-        })
-        const savedNote = await note.save()
-        res.status(201).json(savedNote)
+            content
+        }
+        const result = await Note.insertOne(doc)
+        res.status(201).json({message:"doc is inserted"})
     } catch (error) {
         res.status(500).json({ message: error.message })
     }

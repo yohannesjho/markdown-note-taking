@@ -15,7 +15,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 connectToDatabase()
     .then(() => {
         // Start the server once the DB connection is successful
-        app.use('/api',authenticateToken,noteRoutes)
+        app.use('/api',noteRoutes)
         app.use('/auth',auth)
         app.listen(process.env.PORT , (req,res)=>{
             console.log('server is listening on port 5000')

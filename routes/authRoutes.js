@@ -25,3 +25,5 @@ router.post('/user/login', async (req,res)=>{
     const token = jwt.sign(payload,process.env.JWT_SERET,{expiresIn:'1h'})
     res.status(202).json({token})
 })
+
+module.exports = router

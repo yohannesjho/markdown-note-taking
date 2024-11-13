@@ -64,29 +64,28 @@ router.put('/note/:id', async (req, res) => {
     try {
         const db = getDb()
         await db.collection("notes").updateOne(
-            { _id: new require("mongodb").ObjectId(req.params.id) }, 
+            { _id: new require("mongodb").ObjectId(req.params.id) },
             {
-            $set: {
-                title,
-                content,
-                updatedAt: new Date.now()
-            }},
+                $set: {
+                    title,
+                    content,
+                    updatedAt: new Date.now()
+                }
+            },
             { returnDocument: 'after' })
-res.status(200).json(updatedNote)
+        res.status(200).json(updatedNote)
     } catch (error) {
-    res.status(500).json({ message: error.message })
-}
+        res.status(500).json({ message: error.message })
+    }
 })
 
 //Delete a specific note
 router.delete('/note/:id', async (req, res) => {
     try {
-
-        const note = await Note.findByIdAndDelete(req.params.id)
-        if (!note) {
-            return res.status(404).json({ message: "note not found" })
-        }
-        res.status(200).json({ message: "note deleted successfully" })
+      const db = getDb()
+      const result = await db.collection("notes").deleteOne({_id:new require("mongodb").ObjectId(req.params.id)})
+      if(result.deletedCount === 0) return res.status(404).json({message:"note not found"})
+      res.status(200).json({message:"note deleted successfully"})
     } catch (error) {
         res.status(500).json({ messsage: error.message })
     }
@@ -95,11 +94,19 @@ router.delete('/note/:id', async (req, res) => {
 //file uploades 
 router.post('/note/:id/upload', upload.single('file'), async (req, res) => {
     try {
-        const note = Note.findById(req.params.id)
-        if (!note) { return res.status(404).json({ message: "note not found" }) }
-        if (!req.file) { return res.status(404).json({ message: "no file uploaded" }) }
-        note.files.push(req.file.path)
-        await note.save();
+        const db = getDb()
+        const note = await db.collection("notes").findOne({ _id: new require('mongodb').ObjectId(req.params.id) })
+        if (!note) return res.status(404).json({ message: "Note not found" });
+        if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+
+        await db.collection('notes').updateOne(
+            { _id: new require('mongodb').ObjectId(req.params.id) },
+            { $push: { files: req.file.path } }
+           
+            res.status(200).json({ message: "File uploaded successfully", filePath: req.file.path });
+            
+
+        );
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

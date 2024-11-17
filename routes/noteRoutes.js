@@ -6,18 +6,18 @@ const multer = require('multer')
 const upload = require('../config/fileConfig')
 const axios = require('axios')
 const { getDb } = require('../db/db')
-const { ReturnDocument } = require('mongodb')
 const { ObjectId } = require('mongodb');
 
 
 
 //create a new note
-router.post('/notes', async (req, res) => {
-    const { title, content } = req.body;
+router.post('/note/new',upload.none(), async (req, res) => {
+    const {title,content} = req.body;
+    console.log('Request body:', req.body);
+
     try {
         const db = getDb();
-        const result = await db.collection('notes').insertOne({ title, content, createdAt: Date.now() });
-        console.log(result)
+        const result = await db.collection('notes').insertOne({title,content});
         res.status(201).json({ message: "Document inserted", noteId: result.insertedId });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -28,7 +28,7 @@ router.post('/notes', async (req, res) => {
 router.get('/note/render/:id', async (req, res) => {
     try {
         const db = getDb();
-        const note = await db.collection("notes").findOne({ _id: req.params.id })
+        const note = await db.collection("notes").findOne({ _id: new ObjectId(req.params.id)})
         if (!note) return res.status(404).json({ message: "Note not found" });
         const html = marked(note.content);
         res.status(200).json({ html });
@@ -66,7 +66,7 @@ router.put('/note/:id', async (req, res) => {
     const { title, content } = req.body
     try {
         const db = getDb()
-        const result= await db.collection("notes").updateOne(
+        const result= await db.collection("notes").findOneAndUpdate(
             { _id: new ObjectId(req.params.id) },
             {
                 $set: {
@@ -80,6 +80,7 @@ router.put('/note/:id', async (req, res) => {
             if (!result) return res.status(404).json({ message: "Note not found" });
             res.status(200).json(result);
     } catch (error) {
+        console.log(error)
         res.status(500).json({ message: error.message })
     }
 })
@@ -119,8 +120,9 @@ router.post('/note/:id/upload', upload.single('file'), async (req, res) => {
 });
 
 //check the grammar
-router.post('/grammar-check', async (req, res) => {
+router.post('/note/grammar-check', async (req, res) => {
     const { text } = req.body;
+     
 
     if (!text) {
         return res.status(400).json({ message: 'Text is required' });
@@ -134,11 +136,12 @@ router.post('/grammar-check', async (req, res) => {
         }, {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
         });
-
         if (response.data.matches.length === 0) {
-            res.status(400).json({ message: "there is no grammar error" })
+            return res.status(200).json({ message: "there is no grammar error" })
         }
-        res.status(200).json(response.data.matches[0].message);
+        const messages = response.data.matches.map((match)=>match.message)
+          
+         return res.status(200).json(messages);
     } catch (error) {
         console.error('Grammar check error:', error);
         res.status(500).json({ message: 'Error checking grammar', error: error.message });

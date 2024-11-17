@@ -12,7 +12,8 @@ dotenv.config()
 const app = express()
 const corsOptions = {
     origin: [
-      'http://localhost:3000',  
+      'http://localhost:3000',
+      'https://markdown-front-end.vercel.app/'  
       
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],  
@@ -23,14 +24,14 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-const PORT = process.env.PORT || 3000
+const PORT = process.env.PORT || 5000
 connectToDatabase()
     .then(() => {
   
         app.use('/api',noteRoutes)
         app.use('/api/auth',auth)
-        app.listen(5000 , (req,res)=>{
-            console.log(`server is listening on port 5000`)
+        app.listen(PORT , (req,res)=>{
+            console.log(`server is listening on port ${PORT}`)
         })
     })
     .catch((error) => {

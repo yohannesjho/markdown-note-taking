@@ -12,7 +12,7 @@ dotenv.config()
 const app = express()
 const corsOptions = {
     origin: [
-      'http://localhost:3000',
+      
       'https://markdown-front-end.vercel.app/'  
       
     ],

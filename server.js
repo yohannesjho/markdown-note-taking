@@ -13,7 +13,7 @@ const app = express()
 const corsOptions = {
     origin: [
       'https://markdown-front-end.vercel.app',
-      'https://markdown-front-4uaf10nxn-yohannesjhos-projects.vercel.app/'   
+      'https://markdown-front-609ch91jt-yohannesjhos-projects.vercel.app/'   
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],  
     credentials: true,  
